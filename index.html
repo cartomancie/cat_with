@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gatinho Faminto 🐱</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="sky">
+  <div class="cloud c1"></div>
+  <div class="cloud c2"></div>
+  <div class="cloud c3"></div>
+</div>
+
+<!-- ===================== TELA: NOME DO GATO ===================== -->
+<section id="screen-name" class="screen active">
+  <div class="card name-card">
+    <img class="name-cat" src="cat.png" alt="Gatinho">
+    <h1>Que gatinho fofo!</h1>
+    <p>Como você quer chamá-lo?</p>
+    <input id="input-name" type="text" maxlength="16" placeholder="Digite um nome...">
+    <button id="btn-confirm-name" class="btn btn-primary">Adotar 🐾</button>
+    <p class="error-msg" id="name-error"></p>
+  </div>
+</section>
+
+<!-- ===================== TELA: CASA DO GATO ===================== -->
+<section id="screen-home" class="screen">
+  <header class="topbar">
+    <div class="pet-name-tag">
+      <span class="pet-name-cloud">
+        <span id="cat-name-display">Miau</span>
+        <button id="btn-rename" title="Renomear">✎</button>
+      </span>
+    </div>
+    <div class="coins-tag">🪙 <span id="coins-display">0</span></div>
+  </header>
+
+  <div class="stage">
+    <div class="ground"></div>
+
+    <div id="mood-bubble" class="mood-bubble">😺</div>
+
+    <div id="cat-wrapper" class="cat-wrapper">
+      <img id="cat-sprite" src="cat.png" alt="Gatinho" class="cat-sprite idle">
+      <div id="cat-shadow" class="cat-shadow"></div>
+    </div>
+
+    <div id="sleep-card" class="sleep-card">
+      <img id="sleep-scene-img" src="cat-sleep-scene.jpg" alt="Gatinho dormindo" class="sleep-img">
+      <span class="zzz z1">Z</span>
+      <span class="zzz z2">Z</span>
+      <span class="zzz z3">z</span>
+    </div>
+
+    <div id="hearts-layer" class="hearts-layer"></div>
+    <div id="crumbs-layer" class="crumbs-layer"></div>
+  </div>
+
+  <div class="hud">
+    <div class="stat-row">
+      <span class="stat-icon">🍖</span>
+      <div class="bar-bg">
+        <div id="hunger-fill" class="bar-fill hunger"></div>
+      </div>
+      <span id="hunger-value" class="stat-value">100</span>
+    </div>
+    <div class="stat-row">
+      <span class="stat-icon">✨</span>
+      <div class="bar-bg">
+        <div id="happy-fill" class="bar-fill happy"></div>
+      </div>
+      <span id="happy-value" class="stat-value">100</span>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button id="btn-feed" class="btn btn-primary btn-big">🍞 Alimentar</button>
+    <button id="btn-pet" class="btn btn-secondary">💛 Fazer carinho</button>
+    <button id="btn-sleep" class="btn btn-secondary">😴 Dormir</button>
+  </div>
+
+  <!-- ---------- Mochila (botão flutuante) ---------- -->
+  <button id="btn-backpack" class="backpack-btn" title="Mochila">
+    <img src="backpack.png" alt="Mochila">
+    <span id="potion-badge" class="item-badge" hidden>0</span>
+  </button>
+</section>
+
+<!-- ===================== MODAL: MOCHILA ===================== -->
+<div id="backpack-modal" class="modal-overlay">
+  <div class="card modal-card backpack-card">
+    <div class="modal-header">
+      <h2>🎒 Mochila</h2>
+      <button id="btn-close-backpack" class="btn-close">✕</button>
+    </div>
+
+    <div class="modal-coins">🪙 <span id="modal-coins">0</span></div>
+
+    <div class="modal-tabs">
+      <button class="tab-btn active" data-tab="market">Mercado</button>
+      <button class="tab-btn" data-tab="items">Itens</button>
+    </div>
+
+    <div id="tab-market" class="tab-panel active"></div>
+    <div id="tab-items" class="tab-panel">
+      <p id="items-empty" class="empty-hint">Sua mochila está vazia. Compre algo no Mercado!</p>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== TELA: MINIGAME DE ALIMENTAR ===================== -->
+<section id="screen-minigame" class="screen">
+  <div class="minigame-header">
+    <div class="mg-stat">⏱️ <span id="mg-time">30</span>s</div>
+    <div class="mg-stat">🍞 <span id="mg-caught">0</span></div>
+    <div class="mg-stat">🐟 <span id="mg-fish">0</span></div>
+    <div class="mg-lives" id="mg-lives">❤️❤️❤️</div>
+  </div>
+
+  <canvas id="mg-canvas"></canvas>
+
+  <p class="mg-hint">Toque ou clique na comida (e nos peixinhos bônus!) antes que caiam no chão!</p>
+</section>
+
+<!-- ===================== TELA: RESULTADO DO MINIGAME ===================== -->
+<section id="screen-result" class="screen">
+  <div class="card result-card">
+    <div class="result-emoji" id="result-emoji">🎉</div>
+    <h2 id="result-title">Muito bem!</h2>
+    <p id="result-desc">Você alimentou seu gatinho.</p>
+    <div class="result-stats">
+      <div><span>🍞</span><b id="result-caught">0</b></div>
+      <div><span>🪙</span><b id="result-coins">0</b></div>
+    </div>
+    <button id="btn-back-home" class="btn btn-primary">Voltar pra casa</button>
+  </div>
+</section>
+
+<div id="toast" class="toast"></div>
+
+<script src="script.js"></script>
+</body>
+</html>
