@@ -1,23 +1,17 @@
-// ---------- utils.js ----------
-// Funções pequenas e reutilizáveis usadas pelo resto do jogo.
-
+// ===================== utils.js =====================
 const Utils = {
   clamp(value, min, max){
     return Math.max(min, Math.min(max, value));
   },
-
   rand(min, max){
     return Math.random() * (max - min) + min;
   },
-
   randInt(min, max){
     return Math.floor(this.rand(min, max + 1));
   },
-
   choice(arr){
     return arr[this.randInt(0, arr.length - 1)];
   },
-
   showToast(message, duration = 2200){
     const toast = document.getElementById('toast');
     if(!toast) return;
@@ -28,31 +22,26 @@ const Utils = {
       toast.classList.remove('show');
     }, duration);
   },
-
   showScreen(id){
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     const target = document.getElementById(id);
     if(target) target.classList.add('active');
   },
-
   formatSeconds(s){
     return Math.max(0, Math.ceil(s));
   }
 };
-// ---------- storage.js ----------
-// Guarda e recupera o estado do bichinho no localStorage do navegador,
-// incluindo o cálculo de fome/felicidade perdidas enquanto o jogo estava fechado.
 
+// ===================== storage.js =====================
 const STORAGE_KEY = 'gatinho-faminto-save-v1';
-
-const HUNGER_DECAY_PER_MIN = 1.4;   // quanto de fome cai por minuto real
-const HAPPY_DECAY_PER_MIN  = 0.9;   // quanto de felicidade cai por minuto real
+const HUNGER_DECAY_PER_MIN = 1.4;
+const HAPPY_DECAY_PER_MIN  = 0.9;
 
 const Storage = {
   getDefaultState(){
     return {
       name: '',
-      gender: null,         // 'boy' ou 'girl' — escolhido na tela inicial
+      gender: null,
       hunger: 100,
       happy: 100,
       coins: 0,
@@ -60,29 +49,18 @@ const Storage = {
       totalFed: 0,
       sleeping: false,
       inventory: { potion: 0 },
-      outfits: {},          // roupas já compradas, ex: { 'roupa-giy': true }
-      equippedOutfit: null  // id da roupa vestida agora (null = original)
+      outfits: {},
+      equippedOutfit: null
     };
   },
-
   load(){
     let raw;
-    try{
-      raw = localStorage.getItem(STORAGE_KEY);
-    }catch(e){
-      return this.getDefaultState();
-    }
+    try{ raw = localStorage.getItem(STORAGE_KEY); }catch(e){ return this.getDefaultState(); }
     if(!raw) return this.getDefaultState();
 
     let state;
-    try{
-      state = JSON.parse(raw);
-    }catch(e){
-      return this.getDefaultState();
-    }
+    try{ state = JSON.parse(raw); }catch(e){ return this.getDefaultState(); }
 
-    // Aplica decaimento pelo tempo que passou desde a última visita
-    // (a não ser que o gatinho estivesse dormindo, aí a fome cai mais devagar)
     const now = Date.now();
     const minutesPassed = Math.max(0, (now - (state.lastUpdate || now)) / 60000);
     const decayFactor = state.sleeping ? 0.25 : 1;
@@ -98,8 +76,6 @@ const Storage = {
     state.equippedOutfit = state.equippedOutfit || null;
     state.gender = state.gender || null;
 
-    // Migração: saves antigos guardavam a roupa rosa com o id 'roupa-giy'.
-    // Continua reconhecendo quem já tinha comprado, agora com o id novo 'rosa'.
     if(state.outfits['roupa-giy'] && !state.outfits['rosa']){
       state.outfits['rosa'] = true;
       delete state.outfits['roupa-giy'];
@@ -110,26 +86,18 @@ const Storage = {
 
     return state;
   },
-
   save(state){
     state.lastUpdate = Date.now();
-    try{
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    }catch(e){
-      // localStorage indisponível (modo privado, etc) - o jogo segue funcionando sem salvar
-    }
+    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){}
   },
-
   reset(){
     try{ localStorage.removeItem(STORAGE_KEY); }catch(e){}
   }
 };
-// ---------- sound.js ----------
-// Pequenos efeitos sonoros gerados por osciladores, sem precisar de arquivos .mp3.
 
+// ===================== sound.js =====================
 const Sound = {
   ctx: null,
-
   _ensureCtx(){
     if(!this.ctx){
       const AudioCtx = window.AudioContext || window.webkitAudioContext;
@@ -140,7 +108,6 @@ const Sound = {
     }
     return this.ctx;
   },
-
   _beep({freq = 440, duration = 0.12, type = 'sine', volume = 0.18, glide = 0}){
     const ctx = this._ensureCtx();
     if(!ctx) return;
@@ -155,68 +122,307 @@ const Sound = {
     osc.start();
     osc.stop(ctx.currentTime + duration + 0.02);
   },
-
-  catch(){
-    this._beep({freq: 620, duration: 0.1, type: 'triangle', glide: 260, volume: 0.16});
-  },
-
+  catch(){ this._beep({freq: 620, duration: 0.1, type: 'triangle', glide: 260, volume: 0.16}); },
   catchFish(){
     this._beep({freq: 720, duration: 0.12, type: 'sine', glide: 320, volume: 0.16});
     setTimeout(() => this._beep({freq: 900, duration: 0.1, type: 'triangle', glide: 200, volume: 0.12}), 60);
   },
-
-  miss(){
-    this._beep({freq: 220, duration: 0.18, type: 'sawtooth', glide: -100, volume: 0.12});
-  },
-
-  pet(){
-    this._beep({freq: 500, duration: 0.08, type: 'sine', glide: 120, volume: 0.12});
-  },
-
+  miss(){ this._beep({freq: 220, duration: 0.18, type: 'sawtooth', glide: -100, volume: 0.12}); },
+  pet(){ this._beep({freq: 500, duration: 0.08, type: 'sine', glide: 120, volume: 0.12}); },
   feedComplete(){
     this._ensureCtx();
     [523, 659, 784].forEach((f, i) => {
       setTimeout(() => this._beep({freq: f, duration: 0.16, type: 'triangle', volume: 0.15}), i * 90);
     });
   },
-
-  sad(){
-    this._beep({freq: 300, duration: 0.3, type: 'sine', glide: -140, volume: 0.1});
-  },
-
-  click(){
-    this._beep({freq: 380, duration: 0.06, type: 'square', volume: 0.08});
-  },
-
+  sad(){ this._beep({freq: 300, duration: 0.3, type: 'sine', glide: -140, volume: 0.1}); },
+  click(){ this._beep({freq: 380, duration: 0.06, type: 'square', volume: 0.08}); },
   buy(){
     this._ensureCtx();
     [440, 660].forEach((f, i) => {
       setTimeout(() => this._beep({freq: f, duration: 0.12, type: 'triangle', volume: 0.14}), i * 80);
     });
   },
+  coin(){ this._beep({freq: 880, duration: 0.09, type: 'square', glide: 240, volume: 0.12}); },
+  sleep(){ this._beep({freq: 260, duration: 0.4, type: 'sine', glide: -80, volume: 0.1}); },
+  wake(){ this._beep({freq: 500, duration: 0.18, type: 'sine', glide: 140, volume: 0.14}); },
+  sparkle(){ this._beep({freq: 1000, duration: 0.15, type: 'sine', glide: 400, volume: 0.1}); }
+};
 
-  coin(){
-    this._beep({freq: 880, duration: 0.09, type: 'square', glide: 240, volume: 0.12});
+// ===================== shop.js =====================
+const SHOP_ITEMS = [
+  {
+    id: 'potion',
+    name: 'Poção Moyai',
+    price: 15,
+    icon: 'potion.png',
+    desc: 'Deixa seu gatinho cheiroso e rosinha por alguns segundos.'
+  }
+];
+
+const OUTFIT_ITEMS = [
+  {
+    id: 'rosa',
+    name: 'Roupa Rosa',
+    price: 400,
+    icon: 'Rouparose.png',
+    catSprite: 'roupa-giy.png',
+    sleepScene: 'cat-sleep-scene-giy.jpg',
+    desc: 'Um casaquinho rosa fofo pro seu gatinho.'
   },
+  {
+    id: 'may',
+    name: 'Roupa Mey',
+    price: 400,
+    icon: 'cat-roupa-May.png',
+    catSprite: 'cat-equip-may.png',
+    sleepScene: 'dormiu-may.png',
+    desc: 'Uma roupinha mey estilosa pro seu gatinho.'
+  }
+];
 
-  sleep(){
-    this._beep({freq: 260, duration: 0.4, type: 'sine', glide: -80, volume: 0.1});
+const ORIGINAL_OUTFIT = {
+  id: null,
+  name: 'Roupa Amarela',
+  icon: 'cat-roupa-giy.png',
+  catSprite: 'cat.png',
+  sleepScene: 'cat-sleep-scene.jpg',
+  desc: 'O jeitinho natural do seu gatinho, sem roupa nenhuma.'
+};
+
+const Shop = {
+  els: {},
+  activeTab: 'market',
+  init(getState, onChange){
+    this.getState = getState;
+    this.onChange = onChange;
+    this.els.btnOpen = document.getElementById('btn-backpack');
+    this.els.overlay = document.getElementById('backpack-modal');
+    this.els.btnClose = document.getElementById('btn-close-backpack');
+    this.els.tabBtns = document.querySelectorAll('.tab-btn');
+    this.els.panelMarket = document.getElementById('tab-market');
+    this.els.panelItems = document.getElementById('tab-items');
+    this.els.modalCoins = document.getElementById('modal-coins');
+    this.els.itemsEmpty = document.getElementById('items-empty');
+    this.els.badge = document.getElementById('potion-badge');
+
+    this.els.btnOpen.addEventListener('click', () => this.open());
+    this.els.btnClose.addEventListener('click', () => this.close());
+    this.els.overlay.addEventListener('click', (e) => {
+      if(e.target === this.els.overlay) this.close();
+    });
+    this.els.tabBtns.forEach(btn => {
+      btn.addEventListener('click', () => this.switchTab(btn.dataset.tab));
+    });
+    this._renderMarket();
+    this.renderAll();
   },
-
-  wake(){
-    this._beep({freq: 500, duration: 0.18, type: 'sine', glide: 140, volume: 0.14});
+  open(){
+    Sound.click();
+    this.renderAll();
+    this.els.overlay.classList.add('active');
   },
+  close(){
+    this.els.overlay.classList.remove('active');
+  },
+  switchTab(tab){
+    this.activeTab = tab;
+    this.els.tabBtns.forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+    this.els.panelMarket.classList.toggle('active', tab === 'market');
+    this.els.panelItems.classList.toggle('active', tab === 'items');
+    if(tab === 'items') this._renderItems();
+  },
+  renderAll(){
+    const state = this.getState();
+    this.els.modalCoins.textContent = state.coins;
+    this._renderMarket();
+    this._renderItems();
+    this._renderBadge();
+  },
+  _renderBadge(){
+    const state = this.getState();
+    const count = state.inventory.potion || 0;
+    if(count > 0){
+      this.els.badge.hidden = false;
+      this.els.badge.textContent = count;
+    }else{
+      this.els.badge.hidden = true;
+    }
+  },
+  _renderMarket(){
+    const state = this.getState();
+    this.els.panelMarket.innerHTML = '';
+    SHOP_ITEMS.forEach(item => {
+      const canAfford = state.coins >= item.price;
+      const card = document.createElement('div');
+      card.className = 'shop-item';
+      card.innerHTML = `
+        <img class="shop-item-img" src="${item.icon}" alt="${item.name}">
+        <div class="shop-item-info">
+          <b>${item.name}</b>
+          <p>${item.desc}</p>
+        </div>
+        <button class="btn btn-primary btn-buy" ${canAfford ? '' : 'disabled'}>${item.price} 🪙</button>
+      `;
+      card.querySelector('.btn-buy').addEventListener('click', () => this.buy(item.id));
+      this.els.panelMarket.appendChild(card);
+    });
 
-  sparkle(){
-    this._beep({freq: 1000, duration: 0.15, type: 'sine', glide: 400, volume: 0.1});
+    OUTFIT_ITEMS.filter(o => !state.outfits[o.id]).forEach(outfit => {
+      const canAfford = state.coins >= outfit.price;
+      const card = document.createElement('div');
+      card.className = 'shop-item';
+      card.innerHTML = `
+        <img class="shop-item-img" src="${outfit.icon}" alt="${outfit.name}">
+        <div class="shop-item-info">
+          <b>${outfit.name}</b>
+          <p>${outfit.desc}</p>
+        </div>
+        <button class="btn btn-primary btn-buy" ${canAfford ? '' : 'disabled'}>${outfit.price} 🪙</button>
+      `;
+      card.querySelector('.btn-buy').addEventListener('click', () => this.buyOutfit(outfit.id));
+      this.els.panelMarket.appendChild(card);
+    });
+  },
+  _renderItems(){
+    const state = this.getState();
+    this.els.panelItems.innerHTML = '';
+    this.els.panelItems.appendChild(this.els.itemsEmpty);
+
+    const owned = SHOP_ITEMS.filter(item => (state.inventory[item.id] || 0) > 0);
+    const ownedOutfits = [ORIGINAL_OUTFIT, ...OUTFIT_ITEMS.filter(o => state.outfits[o.id])];
+
+    this.els.itemsEmpty.style.display = 'none';
+
+    owned.forEach(item => {
+      const count = state.inventory[item.id] || 0;
+      const card = document.createElement('div');
+      card.className = 'inv-item';
+      card.innerHTML = `
+        <img class="inv-item-img" src="${item.icon}" alt="${item.name}">
+        <div class="inv-item-info"><b>${item.name}</b><span>x<span class="inv-count">${count}</span></span></div>
+        <button class="btn btn-secondary btn-give">Dar ao gatinho 🐾</button>
+      `;
+      const img = card.querySelector('.inv-item-img');
+      card.querySelector('.btn-give').addEventListener('click', () => this.giveToCat(item.id, img));
+      this.els.panelItems.appendChild(card);
+    });
+
+    ownedOutfits.forEach(outfit => {
+      const isEquipped = (state.equippedOutfit || null) === outfit.id;
+      const card = document.createElement('div');
+      card.className = 'inv-item';
+      card.innerHTML = `
+        <img class="inv-item-img" src="${outfit.icon}" alt="${outfit.name}">
+        <div class="inv-item-info"><b>${outfit.name}</b><span>${outfit.id ? '' : 'Grátis'}</span></div>
+        <button class="btn ${isEquipped ? 'btn-primary' : 'btn-secondary'} btn-wear" ${isEquipped ? 'disabled' : ''}>
+          ${isEquipped ? 'Vestida ✓' : 'Vestir 👕'}
+        </button>
+      `;
+      card.querySelector('.btn-wear').addEventListener('click', () => this.wearOutfit(outfit.id));
+      this.els.panelItems.appendChild(card);
+    });
+  },
+  buy(itemId){
+    const item = SHOP_ITEMS.find(i => i.id === itemId);
+    const state = this.getState();
+    if(!item || state.coins < item.price){
+      Sound.sad();
+      Utils.showToast('Moedas insuficientes! Alimente seu gatinho para ganhar mais 🪙');
+      return;
+    }
+    state.coins -= item.price;
+    state.inventory[item.id] = (state.inventory[item.id] || 0) + 1;
+    Sound.buy();
+    Utils.showToast(`${item.name} comprada! 🎉`);
+    this.onChange();
+    this.renderAll();
+  },
+  getOutfit(id){
+    if(!id) return ORIGINAL_OUTFIT;
+    return OUTFIT_ITEMS.find(o => o.id === id) || ORIGINAL_OUTFIT;
+  },
+  buyOutfit(outfitId){
+    const outfit = OUTFIT_ITEMS.find(o => o.id === outfitId);
+    const state = this.getState();
+    if(!outfit || state.outfits[outfitId] || state.coins < outfit.price){
+      Sound.sad();
+      Utils.showToast('Moedas insuficientes! Alimente seu gatinho para ganhar mais 🪙');
+      return;
+    }
+    state.coins -= outfit.price;
+    state.outfits[outfitId] = true;
+    state.equippedOutfit = outfitId;
+    Sound.buy();
+    this.onChange();
+    this.switchTab('items');
+    this.renderAll();
+    Utils.showToast(`${outfit.name} comprada e vestida! 🎉`);
+  },
+  wearOutfit(outfitId){
+    const state = this.getState();
+    if(outfitId && !state.outfits[outfitId]) return;
+    state.equippedOutfit = outfitId || null;
+    Sound.click();
+    this.onChange();
+    this.renderAll();
+    const outfit = this.getOutfit(outfitId);
+    Utils.showToast(`${state.name || 'Seu gatinho'} vestiu ${outfit.name}! ✨`);
+  },
+  giveToCat(itemId, imgEl){
+    const item = SHOP_ITEMS.find(i => i.id === itemId);
+    const state = this.getState();
+    if(!item || (state.inventory[itemId] || 0) <= 0) return;
+
+    const startRect = imgEl.getBoundingClientRect();
+    const iconSrc = imgEl.src;
+    state.inventory[itemId]--;
+    const wasSleeping = state.sleeping;
+    state.sleeping = false;
+
+    this.onChange();
+    this.renderAll();
+    this._flyToCat(startRect, iconSrc);
+
+    setTimeout(() => {
+      this.close();
+      Cat.playAction('eating', 900);
+      Cat.blush(5000);
+      Sound.feedComplete();
+      state.happy = Utils.clamp(state.happy + 15, 0, 100);
+      this.onChange();
+      Utils.showToast(`${state.name || 'Seu gatinho'} ficou cheiroso e rosinha! 💗`);
+      if(wasSleeping) Utils.showToast(`${state.name || 'Seu gatinho'} acordou! ☀️`);
+    }, 650);
+  },
+  _flyToCat(startRect, iconSrc){
+    if(!startRect || !startRect.width) return;
+    const catEl = document.getElementById('cat-sprite');
+    const catRect = catEl.getBoundingClientRect();
+
+    const flying = document.createElement('img');
+    flying.src = iconSrc;
+    flying.className = 'flying-item';
+    flying.style.left = startRect.left + 'px';
+    flying.style.top = startRect.top + 'px';
+    flying.style.width = startRect.width + 'px';
+    document.body.appendChild(flying);
+
+    const endX = catRect.left + catRect.width * 0.5 - startRect.width / 2;
+    const endY = catRect.top + catRect.height * 0.35 - startRect.width / 2;
+
+    requestAnimationFrame(() => {
+      flying.style.transform = `translate(${endX - startRect.left}px, ${endY - startRect.top}px) scale(.3) rotate(20deg)`;
+      flying.style.opacity = '0.2';
+    });
+
+    setTimeout(() => flying.remove(), 700);
   }
 };
-// ---------- cat.js ----------
-// Controla a aparência, humor e as pequenas partículas (corações / migalhas) do gato.
 
+// ===================== cat.js =====================
 const Cat = {
   els: {},
-
   init(){
     this.els.sprite = document.getElementById('cat-sprite');
     this.els.wrapper = document.getElementById('cat-wrapper');
@@ -235,7 +441,6 @@ const Cat = {
     this.els.sleepCard = document.getElementById('sleep-card');
     this.els.sleepImg = document.getElementById('sleep-scene-img');
   },
-
   moodFor(hunger, happy){
     if(hunger < 15) return {emoji: '😿', label: 'sad'};
     if(hunger < 40) return {emoji: '😾', label: 'sad'};
@@ -243,7 +448,6 @@ const Cat = {
     if(hunger >= 40 && hunger <= 70) return {emoji: '😺', label: 'idle'};
     return {emoji: '😸', label: 'idle'};
   },
-
   render(state){
     this.els.nameDisplay.textContent = state.name || 'Miau';
     this.els.hungerValue.textContent = Math.round(state.hunger);
@@ -254,20 +458,29 @@ const Cat = {
     this.els.hungerBarBg.classList.toggle('critical', state.hunger < 20);
     this.els.feedBtn.classList.toggle('attention', state.hunger < 35 && !state.sleeping);
 
-    // ---- Roupa: troca o sprite acordado/dormindo conforme a roupa vestida ----
-    const outfit = (typeof Shop !== 'undefined') ? Shop.getOutfit(state.equippedOutfit) : null;
-    if(outfit){
-      if(this.els.sprite.dataset.outfit !== outfit.id){
-        this.els.sprite.src = outfit.catSprite;
-        this.els.sprite.dataset.outfit = outfit.id || '';
-      }
-      if(this.els.sleepImg && this.els.sleepImg.dataset.outfit !== outfit.id){
-        this.els.sleepImg.src = outfit.sleepScene;
-        this.els.sleepImg.dataset.outfit = outfit.id || '';
+    // Suporte dinâmico para quarto e visual de gatinha fêmea vs macho
+    if(!state.equippedOutfit && typeof ORIGINAL_OUTFIT !== 'undefined'){
+      if(state.gender === 'girl'){
+        ORIGINAL_OUTFIT.catSprite = 'Girl-cat.png';
+        ORIGINAL_OUTFIT.sleepScene = 'cat-sleep-scene-girl.jpg';
+      }else{
+        ORIGINAL_OUTFIT.catSprite = 'cat.png';
+        ORIGINAL_OUTFIT.sleepScene = 'cat-sleep-scene.jpg';
       }
     }
 
-    // ---- Dormindo: troca a cena inteira do gato ----
+    const outfit = Shop.getOutfit(state.equippedOutfit);
+    if(outfit){
+      if(this.els.sprite.dataset.outfit !== (outfit.id || 'orig')){
+        this.els.sprite.src = outfit.catSprite;
+        this.els.sprite.dataset.outfit = outfit.id || 'orig';
+      }
+      if(this.els.sleepImg && this.els.sleepImg.dataset.outfit !== (outfit.id || 'orig')){
+        this.els.sleepImg.src = outfit.sleepScene;
+        this.els.sleepImg.dataset.outfit = outfit.id || 'orig';
+      }
+    }
+
     const sleeping = !!state.sleeping;
     this.els.wrapper.classList.toggle('hidden-el', sleeping);
     this.els.sleepCard.classList.toggle('active', sleeping);
@@ -291,17 +504,15 @@ const Cat = {
     if(this.els.mood.textContent !== mood.emoji){
       this.els.mood.textContent = mood.emoji;
       this.els.mood.classList.remove('pop');
-      void this.els.mood.offsetWidth; // reinicia a animação
+      void this.els.mood.offsetWidth;
       this.els.mood.classList.add('pop');
     }
 
-    // Só troca a classe de humor "de repouso" se não houver uma animação de ação tocando
     if(!this.els.sprite.classList.contains('_action')){
       this.els.sprite.classList.remove('idle', 'sad');
       this.els.sprite.classList.add(mood.label === 'sad' ? 'sad' : 'idle');
     }
   },
-
   playAction(name, duration){
     const sprite = this.els.sprite;
     sprite.classList.add('_action');
@@ -312,8 +523,6 @@ const Cat = {
       sprite.classList.remove(name, '_action');
     }, duration);
   },
-
-  // ---- Efeito "cheiroso e rosinha" ao dar a poção ----
   blush(duration = 5000){
     const wrapper = this.els.wrapper;
     wrapper.classList.remove('blushing');
@@ -325,7 +534,6 @@ const Cat = {
       wrapper.classList.remove('blushing');
     }, duration);
   },
-
   spawnHearts(count = 5){
     const layer = this.els.heartsLayer;
     const rect = this.els.wrapper.getBoundingClientRect();
@@ -345,7 +553,6 @@ const Cat = {
       setTimeout(() => heart.remove(), 1400);
     }
   },
-
   spawnCrumbs(count = 8){
     const layer = this.els.crumbsLayer;
     const rect = this.els.wrapper.getBoundingClientRect();
@@ -367,20 +574,16 @@ const Cat = {
     }
   }
 };
-// ---------- minigame.js ----------
-// Minigame simples em canvas: comidinhas (e peixinhos bônus) caem do topo e o
-// jogador precisa tocar/clicar nelas antes que cheguem ao chão. Sem dependências externas.
 
+// ===================== minigame.js =====================
 const Minigame = {
   canvas: null,
   ctx: null,
   foodImg: null,
   fishImg: null,
   running: false,
-
   items: [],
   particles: [],
-
   timeLeft: 30,
   lives: 3,
   caught: 0,
@@ -388,9 +591,7 @@ const Minigame = {
   spawnTimer: 0,
   spawnInterval: 900,
   difficultyTimer: 0,
-
   onFinish: null,
-
   init(){
     this.canvas = document.getElementById('mg-canvas');
     this.ctx = this.canvas.getContext('2d');
@@ -402,7 +603,6 @@ const Minigame = {
     this.canvas.addEventListener('pointerdown', (e) => this._handleTap(e));
     window.addEventListener('resize', () => this._resizeCanvas());
   },
-
   _resizeCanvas(){
     const rect = this.canvas.getBoundingClientRect();
     const dpr = window.devicePixelRatio || 1;
@@ -412,7 +612,6 @@ const Minigame = {
     this.width = rect.width;
     this.height = rect.height;
   },
-
   start(onFinish){
     this._resizeCanvas();
     this.items = [];
@@ -436,18 +635,10 @@ const Minigame = {
     this._lastTs = performance.now();
     requestAnimationFrame((ts) => this._loop(ts));
   },
-
-  stop(){
-    this.running = false;
-  },
-
+  stop(){ this.running = false; },
   _renderLives(){
     document.getElementById('mg-lives').textContent = '❤️'.repeat(Math.max(0, this.lives)) + '🖤'.repeat(3 - Math.max(0, this.lives));
   },
-
-  // Calcula as dimensões/posição reais do peixe desenhado, usadas tanto
-  // pra desenhar quanto pra detectar o clique (assim os dois nunca ficam
-  // fora de sincronia de novo).
   _fishBox(it){
     const img = this.fishImg;
     let w, h;
@@ -455,14 +646,12 @@ const Minigame = {
       w = it.r * 1.8;
       h = w * (img.naturalHeight / img.naturalWidth);
     }else{
-      // Proporção aproximada da arte do peixe (alta e fina) como reserva
       w = it.r * 1.8;
       h = w * 3.25;
     }
     const offsetY = -h * 0.32;
     return { w, h, offsetY };
   },
-
   _handleTap(e){
     if(!this.running) return;
     const rect = this.canvas.getBoundingClientRect();
@@ -471,10 +660,7 @@ const Minigame = {
 
     for(let i = this.items.length - 1; i >= 0; i--){
       const it = this.items[i];
-
       if(it.type === 'fish'){
-        // Peixe: caixa retangular alinhada com o desenho real (imagem alta e fina),
-        // com uma margem de folga pra facilitar o toque.
         const { w, h, offsetY } = this._fishBox(it);
         const pad = 12;
         const left = it.x - w / 2 - pad;
@@ -495,7 +681,6 @@ const Minigame = {
       }
     }
   },
-
   _catchItem(index){
     const it = this.items[index];
     this.items.splice(index, 1);
@@ -513,7 +698,6 @@ const Minigame = {
       this._spawnBurst(it.x, it.y, ['#F6CE55', '#F28C77', '#7FD8B0', '#FFF']);
     }
   },
-
   _spawnBurst(x, y, colors){
     for(let i = 0; i < 10; i++){
       const angle = Utils.rand(0, Math.PI * 2);
@@ -528,7 +712,6 @@ const Minigame = {
       });
     }
   },
-
   _spawnItem(){
     const isFish = Math.random() < 0.16;
     const r = isFish ? Utils.rand(16, 20) : Utils.rand(22, 30);
@@ -542,7 +725,6 @@ const Minigame = {
       vrot: Utils.rand(-1.5, 1.5)
     });
   },
-
   _loop(ts){
     if(!this.running) return;
     const dt = Math.min(0.05, (ts - this._lastTs) / 1000);
@@ -558,7 +740,6 @@ const Minigame = {
       if(this.onFinish) this.onFinish({caught: this.caught, fishCaught: this.fishCaught, timeUp: this.timeLeft <= 0});
     }
   },
-
   _update(dt){
     this.timeLeft -= dt;
     document.getElementById('mg-time').textContent = Utils.formatSeconds(this.timeLeft);
@@ -597,12 +778,10 @@ const Minigame = {
       if(p.life <= 0) this.particles.splice(i, 1);
     }
   },
-
   _draw(){
     const ctx = this.ctx;
     ctx.clearRect(0, 0, this.width, this.height);
 
-    // linha de "chão" indicando perigo
     ctx.save();
     ctx.strokeStyle = 'rgba(217,105,79,.35)';
     ctx.setLineDash([8, 8]);
@@ -652,318 +831,12 @@ const Minigame = {
     });
   }
 };
-// ---------- shop.js ----------
-// Controla a mochila: aba Mercado (comprar itens) e aba Itens (usar/dar ao gato).
 
-const SHOP_ITEMS = [
-  {
-    id: 'potion',
-    name: 'Poção Moyai',
-    price: 15,
-    icon: 'potion.png',
-    desc: 'Deixa seu gatinho cheiroso e rosinha por alguns segundos.'
-  }
-];
-
-// ---------- Roupinhas ----------
-// Roupas compradas ficam guardadas em state.outfits (id -> true).
-// A "Roupa Amarela" é sempre grátis e representa o gato sem roupa nenhuma (skin original).
-const OUTFIT_ITEMS = [
-  {
-    id: 'rosa',
-    name: 'Roupa Rosa',
-    price: 400,
-    icon: 'Rouparose.png',                   // ícone da roupa (mercado/itens)
-    catSprite: 'roupa-giy.png',              // gato acordado usando a roupa rosa
-    sleepScene: 'cat-sleep-scene-giy.jpg',   // gato dormindo usando a roupa rosa
-    desc: 'Um casaquinho rosa fofo pro seu gatinho.'
-  },
-  {
-    id: 'may',
-    name: 'Roupa Mey',
-    price: 400,
-    icon: 'cat-roupa-May.png',               // ícone da roupa (mercado/itens)
-    catSprite: 'cat-equip-may.png',          // gato acordado usando a roupa mey
-    sleepScene: 'dormiu-may.png',            // gato dormindo usando a roupa mey
-    desc: 'Uma roupinha mey estilosa pro seu gatinho.'
-  }
-];
-
-const ORIGINAL_OUTFIT = {
-  id: null,
-  name: 'Roupa Amarela',
-  icon: 'cat-roupa-giy.png',
-  catSprite: 'cat.png',
-  sleepScene: 'cat-sleep-scene.jpg',
-  desc: 'O jeitinho natural do seu gatinho, sem roupa nenhuma.'
-};
-
-const Shop = {
-  els: {},
-  activeTab: 'market',
-
-  init(getState, onChange){
-    this.getState = getState;
-    this.onChange = onChange;
-
-    this.els.btnOpen = document.getElementById('btn-backpack');
-    this.els.overlay = document.getElementById('backpack-modal');
-    this.els.btnClose = document.getElementById('btn-close-backpack');
-    this.els.tabBtns = document.querySelectorAll('.tab-btn');
-    this.els.panelMarket = document.getElementById('tab-market');
-    this.els.panelItems = document.getElementById('tab-items');
-    this.els.modalCoins = document.getElementById('modal-coins');
-    this.els.itemsEmpty = document.getElementById('items-empty');
-    this.els.badge = document.getElementById('potion-badge');
-
-    this.els.btnOpen.addEventListener('click', () => this.open());
-    this.els.btnClose.addEventListener('click', () => this.close());
-    this.els.overlay.addEventListener('click', (e) => {
-      if(e.target === this.els.overlay) this.close();
-    });
-
-    this.els.tabBtns.forEach(btn => {
-      btn.addEventListener('click', () => this.switchTab(btn.dataset.tab));
-    });
-
-    this._renderMarket();
-    this.renderAll();
-  },
-
-  open(){
-    Sound.click();
-    this.renderAll();
-    this.els.overlay.classList.add('active');
-  },
-
-  close(){
-    this.els.overlay.classList.remove('active');
-  },
-
-  switchTab(tab){
-    this.activeTab = tab;
-    this.els.tabBtns.forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
-    this.els.panelMarket.classList.toggle('active', tab === 'market');
-    this.els.panelItems.classList.toggle('active', tab === 'items');
-    if(tab === 'items') this._renderItems();
-  },
-
-  renderAll(){
-    const state = this.getState();
-    this.els.modalCoins.textContent = state.coins;
-    this._renderMarket();
-    this._renderItems();
-    this._renderBadge();
-  },
-
-  _renderBadge(){
-    const state = this.getState();
-    const count = state.inventory.potion || 0;
-    if(count > 0){
-      this.els.badge.hidden = false;
-      this.els.badge.textContent = count;
-    }else{
-      this.els.badge.hidden = true;
-    }
-  },
-
-  _renderMarket(){
-    const state = this.getState();
-    this.els.panelMarket.innerHTML = '';
-
-    SHOP_ITEMS.forEach(item => {
-      const canAfford = state.coins >= item.price;
-      const card = document.createElement('div');
-      card.className = 'shop-item';
-      card.innerHTML = `
-        <img class="shop-item-img" src="${item.icon}" alt="${item.name}">
-        <div class="shop-item-info">
-          <b>${item.name}</b>
-          <p>${item.desc}</p>
-        </div>
-        <button class="btn btn-primary btn-buy" ${canAfford ? '' : 'disabled'}>${item.price} 🪙</button>
-      `;
-      card.querySelector('.btn-buy').addEventListener('click', () => this.buy(item.id));
-      this.els.panelMarket.appendChild(card);
-    });
-
-    // Roupas ainda não compradas aparecem no Mercado
-    OUTFIT_ITEMS.filter(o => !state.outfits[o.id]).forEach(outfit => {
-      const canAfford = state.coins >= outfit.price;
-      const card = document.createElement('div');
-      card.className = 'shop-item';
-      card.innerHTML = `
-        <img class="shop-item-img" src="${outfit.icon}" alt="${outfit.name}">
-        <div class="shop-item-info">
-          <b>${outfit.name}</b>
-          <p>${outfit.desc}</p>
-        </div>
-        <button class="btn btn-primary btn-buy" ${canAfford ? '' : 'disabled'}>${outfit.price} 🪙</button>
-      `;
-      card.querySelector('.btn-buy').addEventListener('click', () => this.buyOutfit(outfit.id));
-      this.els.panelMarket.appendChild(card);
-    });
-  },
-
-  _renderItems(){
-    const state = this.getState();
-    this.els.panelItems.innerHTML = '';
-    this.els.panelItems.appendChild(this.els.itemsEmpty);
-
-    const owned = SHOP_ITEMS.filter(item => (state.inventory[item.id] || 0) > 0);
-    // Roupas: original é sempre "possuída" (grátis), + roupas já compradas
-    const ownedOutfits = [ORIGINAL_OUTFIT, ...OUTFIT_ITEMS.filter(o => state.outfits[o.id])];
-
-    // sempre há pelo menos a Roupa Original, então a mochila nunca fica vazia de verdade
-    this.els.itemsEmpty.style.display = 'none';
-
-    owned.forEach(item => {
-      const count = state.inventory[item.id] || 0;
-      const card = document.createElement('div');
-      card.className = 'inv-item';
-      card.innerHTML = `
-        <img class="inv-item-img" src="${item.icon}" alt="${item.name}">
-        <div class="inv-item-info"><b>${item.name}</b><span>x<span class="inv-count">${count}</span></span></div>
-        <button class="btn btn-secondary btn-give">Dar ao gatinho 🐾</button>
-      `;
-      const img = card.querySelector('.inv-item-img');
-      card.querySelector('.btn-give').addEventListener('click', () => this.giveToCat(item.id, img));
-      this.els.panelItems.appendChild(card);
-    });
-
-    ownedOutfits.forEach(outfit => {
-      const isEquipped = (state.equippedOutfit || null) === outfit.id;
-      const card = document.createElement('div');
-      card.className = 'inv-item';
-      card.innerHTML = `
-        <img class="inv-item-img" src="${outfit.icon}" alt="${outfit.name}">
-        <div class="inv-item-info"><b>${outfit.name}</b><span>${outfit.id ? '' : 'Grátis'}</span></div>
-        <button class="btn ${isEquipped ? 'btn-primary' : 'btn-secondary'} btn-wear" ${isEquipped ? 'disabled' : ''}>
-          ${isEquipped ? 'Vestida ✓' : 'Vestir 👕'}
-        </button>
-      `;
-      card.querySelector('.btn-wear').addEventListener('click', () => this.wearOutfit(outfit.id));
-      this.els.panelItems.appendChild(card);
-    });
-  },
-
-  buy(itemId){
-    const item = SHOP_ITEMS.find(i => i.id === itemId);
-    const state = this.getState();
-    if(!item || state.coins < item.price){
-      Sound.sad();
-      Utils.showToast('Moedas insuficientes! Alimente seu gatinho para ganhar mais 🪙');
-      return;
-    }
-    state.coins -= item.price;
-    state.inventory[item.id] = (state.inventory[item.id] || 0) + 1;
-    Sound.buy();
-    Utils.showToast(`${item.name} comprada! 🎉`);
-    this.onChange();
-    this.renderAll();
-  },
-
-  getOutfit(id){
-    if(!id) return ORIGINAL_OUTFIT;
-    return OUTFIT_ITEMS.find(o => o.id === id) || ORIGINAL_OUTFIT;
-  },
-
-  buyOutfit(outfitId){
-    const outfit = OUTFIT_ITEMS.find(o => o.id === outfitId);
-    const state = this.getState();
-    if(!outfit || state.outfits[outfitId] || state.coins < outfit.price){
-      Sound.sad();
-      Utils.showToast('Moedas insuficientes! Alimente seu gatinho para ganhar mais 🪙');
-      return;
-    }
-    state.coins -= outfit.price;
-    state.outfits[outfitId] = true;
-    // ao comprar, o gatinho já veste a roupa na hora
-    state.equippedOutfit = outfitId;
-    Sound.buy();
-    this.onChange();
-    this.switchTab('items');
-    this.renderAll();
-    Utils.showToast(`${outfit.name} comprada e vestida! 🎉`);
-  },
-
-  wearOutfit(outfitId){
-    const state = this.getState();
-    if(outfitId && !state.outfits[outfitId]) return; // segurança
-    state.equippedOutfit = outfitId || null;
-    Sound.click();
-    this.onChange();
-    this.renderAll();
-    const outfit = this.getOutfit(outfitId);
-    Utils.showToast(`${state.name || 'Seu gatinho'} vestiu ${outfit.name}! ✨`);
-  },
-
-  giveToCat(itemId, imgEl){
-    const item = SHOP_ITEMS.find(i => i.id === itemId);
-    const state = this.getState();
-    if(!item || (state.inventory[itemId] || 0) <= 0) return;
-
-    // Guarda a posição/imagem do item AGORA, porque renderAll() vai
-    // reconstruir a lista e apagar o elemento original do DOM.
-    const startRect = imgEl.getBoundingClientRect();
-    const iconSrc = imgEl.src;
-
-    state.inventory[itemId]--;
-
-    // Se o gato estiver dormindo, acorda com a poção :)
-    const wasSleeping = state.sleeping;
-    state.sleeping = false;
-
-    // Atualiza a UI (e "acorda" o gato no DOM) ANTES de medir a posição dele,
-    // senão o cálculo do voo do item pega um elemento ainda escondido.
-    this.onChange();
-    this.renderAll();
-    this._flyToCat(startRect, iconSrc);
-
-    setTimeout(() => {
-      this.close();
-      Cat.playAction('eating', 900);
-      Cat.blush(5000);
-      Sound.feedComplete();
-      state.happy = Utils.clamp(state.happy + 15, 0, 100);
-      this.onChange();
-      Utils.showToast(`${state.name || 'Seu gatinho'} ficou cheiroso e rosinha! 💗`);
-      if(wasSleeping) Utils.showToast(`${state.name || 'Seu gatinho'} acordou! ☀️`);
-    }, 650);
-  },
-
-  // Anima o ícone do item "voando" até a boca do gatinho
-  _flyToCat(startRect, iconSrc){
-    if(!startRect || !startRect.width) return;
-    const catEl = document.getElementById('cat-sprite');
-    const catRect = catEl.getBoundingClientRect();
-
-    const flying = document.createElement('img');
-    flying.src = iconSrc;
-    flying.className = 'flying-item';
-    flying.style.left = startRect.left + 'px';
-    flying.style.top = startRect.top + 'px';
-    flying.style.width = startRect.width + 'px';
-    document.body.appendChild(flying);
-
-    const endX = catRect.left + catRect.width * 0.5 - startRect.width / 2;
-    const endY = catRect.top + catRect.height * 0.35 - startRect.width / 2;
-
-    requestAnimationFrame(() => {
-      flying.style.transform = `translate(${endX - startRect.left}px, ${endY - startRect.top}px) scale(.3) rotate(20deg)`;
-      flying.style.opacity = '0.2';
-    });
-
-    setTimeout(() => flying.remove(), 700);
-  }
-};
-// ---------- main.js ----------
-// Orquestra as telas, o estado salvo e liga os botões da interface.
-
+// ===================== main.js =====================
 let state = Storage.load();
 let decayLoop = null;
 let renamingMode = false;
-let migrationMode = false;   // true quando é uma conta antiga que só precisa escolher o gatinho
+let migrationMode = false;
 let selectedGender = null;
 
 function persist(){
@@ -981,7 +854,6 @@ function startDecayLoop(){
   clearInterval(decayLoop);
   decayLoop = setInterval(() => {
     if(state.sleeping){
-      // fome/felicidade caem bem mais devagar enquanto o gatinho dorme
       state.hunger = Utils.clamp(state.hunger - (HUNGER_DECAY_PER_MIN / 60) * 0.25, 0, 100);
       state.happy = Utils.clamp(state.happy - (HAPPY_DECAY_PER_MIN / 60) * 0.25, 0, 100);
     }else{
@@ -1002,7 +874,6 @@ function goHome(){
   updateHomeUI();
 }
 
-// ---------- Tela: nome do gato ----------
 function initNameScreen(){
   const input = document.getElementById('input-name');
   const btn = document.getElementById('btn-confirm-name');
@@ -1041,7 +912,6 @@ function initNameScreen(){
       goHome();
       Utils.showToast('Nome atualizado! ✨');
     }else if(migrationMode){
-      // Conta antiga: só faltava escolher o gatinho, o nome continua o mesmo
       state.gender = selectedGender;
       migrationMode = false;
       persist();
@@ -1094,7 +964,6 @@ function openRenameScreen(){
   input.focus();
 }
 
-// ---------- Tela: casa ----------
 function initHomeScreen(){
   document.getElementById('btn-rename').addEventListener('click', openRenameScreen);
 
@@ -1127,7 +996,6 @@ function initHomeScreen(){
   });
 }
 
-// ---------- Minigame ----------
 function startFeedMinigame(){
   Utils.showScreen('screen-minigame');
   Minigame.start((result) => {
@@ -1138,7 +1006,6 @@ function startFeedMinigame(){
 function finishFeedMinigame(result){
   const hungerGain = result.caught * 9;
   const happyGain = result.caught * 3;
-  // Cuidar do gatinho (alimentar) rende moedas fixas por sessão + bônus por peixe
   const coinsGain = (result.caught > 0 ? 25 : 0) + (result.fishCaught || 0) * 10;
 
   state.hunger = Utils.clamp(state.hunger + hungerGain, 0, 100);
@@ -1189,7 +1056,6 @@ function initResultScreen(){
   });
 }
 
-// ---------- Boot ----------
 function boot(){
   Cat.init();
   Minigame.init();
