@@ -255,10 +255,6 @@ const Cat = {
     this.els.feedBtn.classList.toggle('attention', state.hunger < 35 && !state.sleeping);
 
     // ---- Roupa: troca o sprite acordado/dormindo conforme a roupa vestida ----
-    // Sem roupa equipada, o sprite "original" é o gatinho (menino/menina) escolhido na adoção.
-    if(!state.equippedOutfit && typeof ORIGINAL_OUTFIT !== 'undefined'){
-      ORIGINAL_OUTFIT.catSprite = state.gender === 'girl' ? 'Girl-cat.png' : 'Boy-cat.png';
-    }
     const outfit = (typeof Shop !== 'undefined') ? Shop.getOutfit(state.equippedOutfit) : null;
     if(outfit){
       if(this.els.sprite.dataset.outfit !== outfit.id){
@@ -1218,3 +1214,4 @@ function boot(){
 }
 
 document.addEventListener('DOMContentLoaded', boot);
+
