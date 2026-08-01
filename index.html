@@ -23,7 +23,7 @@
 
     <div id="gender-select" class="gender-select">
       <button type="button" class="gender-option" data-gender="boy">
-        <img src="Boy-cat.jpg" alt="Gatinho macho">
+        <img src="Boy-cat.png" alt="Gatinho macho">
         <span>Menino</span>
       </button>
       <button type="button" class="gender-option" data-gender="girl">
@@ -46,7 +46,7 @@
         <button id="btn-rename" title="Renomear">✎</button>
       </span>
     </div>
-    <div class="coins-tag">🪙 <span id="coins-display">0</span></div>
+    <div class="coins-tag"><img class="coin-icon" src="MOEDA-cat.png" alt="moedas"> <span id="coins-display">0</span></div>
   </header>
 
   <div class="stage">
@@ -72,7 +72,7 @@
 
   <div class="hud">
     <div class="stat-row">
-      <span class="stat-icon">🍖</span>
+      <img class="stat-icon-img" src="carne-cat.png" alt="fome">
       <div class="bar-bg">
         <div id="hunger-fill" class="bar-fill hunger"></div>
       </div>
@@ -93,6 +93,7 @@
     <button id="btn-sleep" class="btn btn-secondary">😴 Dormir</button>
   </div>
 
+  <!-- ---------- Mochila (botão flutuante) ---------- -->
   <button id="btn-backpack" class="backpack-btn" title="Mochila">
     <img src="backpack.png" alt="Mochila">
     <span id="potion-badge" class="item-badge" hidden>0</span>
@@ -107,7 +108,7 @@
       <button id="btn-close-backpack" class="btn-close">✕</button>
     </div>
 
-    <div class="modal-coins">🪙 <span id="modal-coins">0</span></div>
+    <div class="modal-coins"><img class="coin-icon" src="MOEDA-cat.png" alt="moedas"> <span id="modal-coins">0</span></div>
 
     <div class="modal-tabs">
       <button class="tab-btn active" data-tab="market">Mercado</button>
@@ -132,7 +133,7 @@
 
   <canvas id="mg-canvas"></canvas>
 
-  <p class="mg-hint">Toque ou clique na comida (e nos peixinhos bônus!) antes que caiam no chão!</p>
+  <p class="mg-hint">Toque na comida e nos peixinhos bônus antes que caiam no chão! Evite o tênis — se tocar nele, perde uma vida. 👟❌</p>
 </section>
 
 <!-- ===================== TELA: RESULTADO DO MINIGAME ===================== -->
@@ -143,7 +144,7 @@
     <p id="result-desc">Você alimentou seu gatinho.</p>
     <div class="result-stats">
       <div><span>🍞</span><b id="result-caught">0</b></div>
-      <div><span>🪙</span><b id="result-coins">0</b></div>
+      <div><img class="coin-icon" src="MOEDA-cat.png" alt="moedas"><b id="result-coins">0</b></div>
     </div>
     <button id="btn-back-home" class="btn btn-primary">Voltar pra casa</button>
   </div>
@@ -154,4 +155,3 @@
 <script src="script.js"></script>
 </body>
 </html>
-
