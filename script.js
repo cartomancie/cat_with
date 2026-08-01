@@ -675,6 +675,15 @@ const OUTFIT_ITEMS = [
     catSprite: 'roupa-giy.png',              // gato acordado usando a roupa rosa
     sleepScene: 'cat-sleep-scene-giy.jpg',   // gato dormindo usando a roupa rosa
     desc: 'Um casaquinho rosa fofo pro seu gatinho.'
+  },
+  {
+    id: 'may',
+    name: 'Roupa Mey',
+    price: 400,
+    icon: 'cat-roupa-May.png',               // ícone da roupa (mercado/itens)
+    catSprite: 'cat-equip-may.png',          // gato acordado usando a roupa mey
+    sleepScene: 'dormiu-may.png',            // gato dormindo usando a roupa mey
+    desc: 'Uma roupinha mey estilosa pro seu gatinho.'
   }
 ];
 
