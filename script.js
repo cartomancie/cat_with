@@ -52,6 +52,7 @@ const Storage = {
   getDefaultState(){
     return {
       name: '',
+      gender: null,         // 'boy' ou 'girl' — escolhido na tela inicial
       hunger: 100,
       happy: 100,
       coins: 0,
@@ -95,6 +96,7 @@ const Storage = {
     state.inventory.potion = state.inventory.potion || 0;
     state.outfits = state.outfits || {};
     state.equippedOutfit = state.equippedOutfit || null;
+    state.gender = state.gender || null;
 
     // Migração: saves antigos guardavam a roupa rosa com o id 'roupa-giy'.
     // Continua reconhecendo quem já tinha comprado, agora com o id novo 'rosa'.
@@ -253,6 +255,10 @@ const Cat = {
     this.els.feedBtn.classList.toggle('attention', state.hunger < 35 && !state.sleeping);
 
     // ---- Roupa: troca o sprite acordado/dormindo conforme a roupa vestida ----
+    // Sem roupa equipada, o sprite "original" é o gatinho (menino/menina) escolhido na adoção.
+    if(!state.equippedOutfit && typeof ORIGINAL_OUTFIT !== 'undefined'){
+      ORIGINAL_OUTFIT.catSprite = state.gender === 'girl' ? 'Girl-cat.png' : 'Boy-cat.jpg';
+    }
     const outfit = (typeof Shop !== 'undefined') ? Shop.getOutfit(state.equippedOutfit) : null;
     if(outfit){
       if(this.els.sprite.dataset.outfit !== outfit.id){
@@ -961,6 +967,8 @@ const Shop = {
 let state = Storage.load();
 let decayLoop = null;
 let renamingMode = false;
+let migrationMode = false;   // true quando é uma conta antiga que só precisa escolher o gatinho
+let selectedGender = null;
 
 function persist(){
   Storage.save(state);
@@ -1003,6 +1011,16 @@ function initNameScreen(){
   const input = document.getElementById('input-name');
   const btn = document.getElementById('btn-confirm-name');
   const error = document.getElementById('name-error');
+  const genderWrap = document.getElementById('gender-select');
+  const genderBtns = document.querySelectorAll('.gender-option');
+
+  genderBtns.forEach(b => {
+    b.addEventListener('click', () => {
+      selectedGender = b.dataset.gender;
+      genderBtns.forEach(x => x.classList.toggle('selected', x === b));
+      error.textContent = '';
+    });
+  });
 
   const confirm = () => {
     const value = input.value.trim();
@@ -1014,14 +1032,27 @@ function initNameScreen(){
       error.textContent = 'Nome muito grande (máx. 16 letras).';
       return;
     }
+    if(!renamingMode && !selectedGender){
+      error.textContent = 'Escolha um gatinho pra continuar!';
+      return;
+    }
     error.textContent = '';
     state.name = value;
+
     if(renamingMode){
       renamingMode = false;
       persist();
       goHome();
       Utils.showToast('Nome atualizado! ✨');
+    }else if(migrationMode){
+      // Conta antiga: só faltava escolher o gatinho, o nome continua o mesmo
+      state.gender = selectedGender;
+      migrationMode = false;
+      persist();
+      goHome();
+      Utils.showToast(`Bem-vindo(a) de volta, ${state.name}! 🐾`);
     }else{
+      state.gender = selectedGender;
       state.hunger = 100;
       state.happy = 100;
       persist();
@@ -1037,6 +1068,23 @@ function initNameScreen(){
   });
 }
 
+function showAdoptionScreen(){
+  const genderWrap = document.getElementById('gender-select');
+  const genderBtns = document.querySelectorAll('.gender-option');
+  selectedGender = null;
+  genderBtns.forEach(b => b.classList.remove('selected'));
+  genderWrap.style.display = '';
+
+  const input = document.getElementById('input-name');
+  input.value = migrationMode ? state.name : '';
+  document.getElementById('name-error').textContent = '';
+  document.querySelector('.name-card h1').textContent = 'Que gatinho fofo!';
+  document.querySelector('.name-card p').textContent = 'Como você quer chamá-lo?';
+  document.getElementById('btn-confirm-name').textContent = 'Adotar 🐾';
+
+  Utils.showScreen('screen-name');
+}
+
 function openRenameScreen(){
   renamingMode = true;
   const input = document.getElementById('input-name');
@@ -1045,6 +1093,7 @@ function openRenameScreen(){
   document.querySelector('.name-card h1').textContent = 'Trocar o nome';
   document.querySelector('.name-card p').textContent = 'Como prefere chamá-lo agora?';
   document.getElementById('btn-confirm-name').textContent = 'Salvar nome';
+  document.getElementById('gender-select').style.display = 'none';
   Utils.showScreen('screen-name');
   input.focus();
 }
@@ -1156,7 +1205,11 @@ function boot(){
   document.getElementById('coins-display').textContent = state.coins;
 
   if(!state.name){
-    Utils.showScreen('screen-name');
+    migrationMode = false;
+    showAdoptionScreen();
+  }else if(!state.gender){
+    migrationMode = true;
+    showAdoptionScreen();
   }else{
     goHome();
   }

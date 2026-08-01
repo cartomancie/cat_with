@@ -17,10 +17,21 @@
 <!-- ===================== TELA: NOME DO GATO ===================== -->
 <section id="screen-name" class="screen active">
   <div class="card name-card">
-    <img class="name-cat" src="cat.png" alt="Gatinho">
     <h1>Que gatinho fofo!</h1>
     <p>Como você quer chamá-lo?</p>
     <input id="input-name" type="text" maxlength="16" placeholder="Digite um nome...">
+
+    <div id="gender-select" class="gender-select">
+      <button type="button" class="gender-option" data-gender="boy">
+        <img src="Boy-cat.jpg" alt="Gatinho macho">
+        <span>Menino</span>
+      </button>
+      <button type="button" class="gender-option" data-gender="girl">
+        <img src="Girl-cat.png" alt="Gatinha fêmea">
+        <span>Menina</span>
+      </button>
+    </div>
+
     <button id="btn-confirm-name" class="btn btn-primary">Adotar 🐾</button>
     <p class="error-msg" id="name-error"></p>
   </div>
